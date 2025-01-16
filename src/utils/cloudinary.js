@@ -2,14 +2,14 @@ import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
 cloudinary.config({
-    cloud_name: "dlrud73rg",
-    api_key: "929424498164355",
-    api_secret: "EN6vGWGpNyEs6pqBa4sP3k2L1RY",
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 const uploadOnCloudinary = async (localFilePath) => {
     try {
-        if (!localFilePath) return "Could Not Find File Path";
+        if (!localFilePath) return "Could Not Find the  File Local Path";
 
         // upload the file on cloudinary;
         const response = await cloudinary.uploader.upload(localFilePath, {

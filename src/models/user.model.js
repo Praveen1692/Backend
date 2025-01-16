@@ -27,14 +27,15 @@ const userSchema = new mongoose.Schema(
         },
         avatar: {
             type: String, // cloudinary url
-            // required: [true,'Avatar is required'],
+            required: [true,'Avatar is required'],
         },
         coverImage: {
-            type: String,
+            type: String, // cloudinary url
+
         },
         watchHistory: [
             {
-                type: mongoose.Types.ObjectId,
+                type: mongoose.Schema.Types.ObjectId,
                 ref: "Video",
             },
         ],
@@ -69,7 +70,7 @@ userSchema.methods.generateAccessToken = async function () {
             _id: this._id,
             email: this.email,
             username: this.username,
-            fillName: this.fullName,
+            fullname: this.fullname,
         },
         process.env.ACCESS_TOKEN_SECRET,
         {

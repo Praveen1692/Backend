@@ -2,8 +2,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/apiError.js";
 
-const generateAccessTokenAndgenerateAccessToken = async (userId) => {
+const generateAccessTokenAndgenerateRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
         const accessToken = user.generateAccessToken();
@@ -36,13 +37,17 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const existedUser = await User.findOne({
-        $or: [{ email: email }, { username: username }],
+        $or: [{ email }, { username }],
     });
     if (existedUser) {
-        throw new Error("Email or Username already exists");
+        throw new ApiError(409, "Email or Username already exists");
     }
     const avatarLocalPath = req.files?.avatar[0]?.path;
+    console.log(avatarLocalPath); // for debug
+
     const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    console.log(coverImageLocalPath); // for debug
+
     if (!avatarLocalPath || !coverImageLocalPath) {
         res.status(400).json({
             msg: "Please select both Avatar & Cover Image",
@@ -50,22 +55,26 @@ const registerUser = asyncHandler(async (req, res) => {
         return;
     }
     const avatar = await uploadOnCloudinary(avatarLocalPath);
+    console.log(avatar);
+
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
-    if (!avatar || !coverImage) {
-        throw new Error("image uploading failed");
+    console.log(coverImage);
+
+    if (!avatar) {
+        throw new ApiError(400, "image uploading failed");
     }
     const user = await User.create({
         fullname,
         avatar: avatar.url,
         email,
         password,
-        username,
-        coverImage: coverImage.url,
+        username:username.toLowerCase(),
+        coverImage: coverImage.url || " ",
     });
-    const findUserById = await User.findById(user._id).select(
+    const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     );
-    if (!findUserById) {
+    if (!createdUser) {
         throw new Error("Error in creating the account");
     }
     res.status(200).json(new ApiResponse(200, user, "User Created"));

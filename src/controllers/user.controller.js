@@ -68,16 +68,16 @@ const registerUser = asyncHandler(async (req, res) => {
         avatar: avatar.url,
         email,
         password,
-        username:username.toLowerCase(),
+        username: username.toLowerCase(),
         coverImage: coverImage.url || " ",
     });
     const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     );
     if (!createdUser) {
-        throw new Error("Error in creating the account");
+        throw new ApiError(500, "Error in creating the account");
     }
-    res.status(200).json(new ApiResponse(200, user, "User Created"));
+    res.status(201).json(new ApiResponse(200, user, "User Created"));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -90,28 +90,32 @@ const loginUser = asyncHandler(async (req, res) => {
     //GET THE DATA;
     const { username, email, password } = req.body;
     if (!username || !email) {
-        return res.status(400).send("Username or  Email is missing");
+        throw new ApiError(400, "username or email is required");
     }
 
     // find the user  by his/her email or username ;
     const user = await User.findOne({
         $or: [{ username }, { email }],
     });
+
     if (!user) {
-        return res
-            .status(401)
-            .send("User not exit or find based on email or username");
+        throw new ApiError(401, "User Does not exit");
     }
     const isPasswordValid = await user.isPasswordCorrect(password);
+
     if (!isPasswordValid) {
-        return res.status(400).send("Password is not correct");
+        throw new ApiError(401, "Password is not correct");
     }
+
+
     const { accessToken, refreshToken } =
-        await generateAccessTokenAndgenerateAccessToken(user._id);
+        await generateAccessTokenAndgenerateRefreshToken(user._id);
 
     const loggedInUser = await User.findById(user._id).select(
         "-password -refreshToken"
     );
+
+
 
     // for cookes  we need to use : httpOnly and secures identify cookes are update from backend only not from frotend;
 

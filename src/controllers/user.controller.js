@@ -183,10 +183,54 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
             throw new ApiError(401, "Old Password is not correct");
         }
         user.password = newPassword;
-        await user.save({validateBeforeSave: false});
+        await user.save({ validateBeforeSave: false });
+        return res
+            .status(200)
+            .json(new ApiResponse(200, {}, "Password Changed"));
     } catch (error) {
         throw new ApiError(500, "Something went wrong");
     }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const getCurrentUser = asyncHandler(async (req, res) => {
+    return res.status(200).json(new ApiResponse(200, req.user, "User Found"));
+});
+
+const updatedAccountDetails = asyncHandler(async (req, res) => {
+    const { fullname, email } = req.body;
+
+    try {
+        if (!fullname || !email) {
+            throw new ApiError(400, "Please provide complete information");
+        }
+        const user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: { fullname, email },
+            },
+            { new: true }
+        ).select("-password -refreshToken");
+        return res
+            .status(200)
+            .json(new ApiResponse(200, user, "Account Updated Successfully"));
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong");
+    }
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+    const avatarLocalPath = req.files?.path;
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Please select Avatar");
+    }
+});
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updatedAccountDetails,
+};

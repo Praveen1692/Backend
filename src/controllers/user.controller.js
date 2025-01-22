@@ -167,7 +167,26 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Unauthriazed Request");
     }
     jwt.verify(incomingRefreshToken, process.env.ACCESS_TOKEN_SECRET);
-    
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken};
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+
+    try {
+        const user = await User.findById(req.user?._id);
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
+        const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+        if (!isPasswordCorrect) {
+            throw new ApiError(401, "Old Password is not correct");
+        }
+        user.password = newPassword;
+        await user.save({validateBeforeSave: false});
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong");
+    }
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken };

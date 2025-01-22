@@ -223,6 +223,24 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     if (!avatarLocalPath) {
         throw new ApiError(400, "Please select Avatar");
     }
+    try {
+        const avatar = await uploadOnCloudinary(avatarLocalPath);
+        if (!avatar) {
+            throw new ApiError(400, "Image uploading failed");
+        }
+        const user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: { avatar: avatar.url },
+            },
+            { new: true }
+        ).select("-password -refreshToken");
+        return res
+            .status(200)
+            .json(new ApiResponse(200, user, "Avatar Updated Successfully"));
+    } catch (error) {
+        throw new ApiError(500, "Something went wrong");
+    }
 });
 
 export {
@@ -233,4 +251,5 @@ export {
     changeCurrentPassword,
     getCurrentUser,
     updatedAccountDetails,
+    updateUserAvatar
 };

@@ -3,7 +3,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/apiError.js";
-
+import jwt from "jsonwebtoken";
 const generateAccessTokenAndgenerateRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
@@ -15,7 +15,10 @@ const generateAccessTokenAndgenerateRefreshToken = async (userId) => {
 
         return { accessToken, refreshToken };
     } catch (error) {
-       throw new ApiError(500,"Something Went Wrong in generateAccessTokenAndgenerateRefreshToken")
+        throw new ApiError(
+            500,
+            "Something Went Wrong in generateAccessTokenAndgenerateRefreshToken"
+        );
     }
 };
 
@@ -89,7 +92,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     //GET THE DATA;
     const { username, email, password } = req.body;
-    if (!username || !email) {
+    if (!(username || !email)) {
         throw new ApiError(400, "username or email is required");
     }
 
@@ -107,15 +110,12 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Password is not correct");
     }
 
-
     const { accessToken, refreshToken } =
         await generateAccessTokenAndgenerateRefreshToken(user._id);
 
     const loggedInUser = await User.findById(user._id).select(
         "-password -refreshToken"
     );
-
-
 
     // for cookes  we need to use : httpOnly and secures identify cookes are update from backend only not from frotend;
 
@@ -157,7 +157,17 @@ const logoutUser = asyncHandler(async (req, res) => {
         .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
-        .json(new ApiResponse(200, "Logged out"));
+        .json(new ApiResponse(200, {}, "Logged out"));
 });
 
-export { registerUser, loginUser, logoutUser };
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken =
+        req.cookies.refreshToken || req.body.refreshToken;
+    if (incomingRefreshToken) {
+        throw new ApiError(401, "Unauthriazed Request");
+    }
+    jwt.verify(incomingRefreshToken, process.env.ACCESS_TOKEN_SECRET);
+    
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken};

@@ -5,6 +5,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 import jwt from "jsonwebtoken";
 const generateAccessTokenAndgenerateRefreshToken = async (userId) => {
+    console.log("GenerateAccessToekn");
+    
     try {
         const user = await User.findById(userId);
         const accessToken = user.generateAccessToken();
